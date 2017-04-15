@@ -1,0 +1,135 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+
+    <title>Drawer</title>
+    <meta name="description" content="Drawer">
+    <meta name="author" content="Selim">
+    <style type="text/css">
+
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+    </style>
+
+  </head>
+  <body>
+    <div id="map"></div>
+    <!-- Replace the value of the key parameter with your own API key. -->
+
+    <script>
+      // This example requires the Drawing library. Include the libraries=drawing
+      // parameter when you first load the API. For example:
+      // <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=drawing">
+      var serialLatLng = function(latLng) {
+        return [latLng.lat(), latLng.lng()];
+      }
+      var exporters = {
+//         marker: function(marker) {
+//           return serialLatLng(marker.getPosition());
+//         },
+        polygon: function(polygon) {
+          points = []
+          polygon.getPath().forEach(function(latLng) {
+            points.push(serialLatLng(latLng));
+          });
+          return points;
+        }
+      };
+      var overlayTypes = Object.keys(exporters);
+      var drawnOverlays = [];
+
+      function ExportControl(controlDiv, map) {
+
+        // Set CSS for the control border.
+        var controlUI = document.createElement('div');
+        controlUI.style.backgroundColor = '#fff';
+        controlUI.style.border = '2px solid #fff';
+        controlUI.style.borderRadius = '3px';
+        controlUI.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
+        controlUI.style.cursor = 'pointer';
+        controlUI.style.marginBottom = '22px';
+        controlUI.style.marginRight = '4px';
+        controlUI.style.marginTop = '4px';
+        controlUI.style.textAlign = 'center';
+        controlUI.title = 'Click to export';
+        controlDiv.appendChild(controlUI);
+
+        // Set CSS for the control interior.
+        var controlText = document.createElement('div');
+        controlText.style.color = 'rgb(25,25,25)';
+        controlText.style.fontFamily = 'Roboto,Arial,sans-serif';
+        controlText.style.fontSize = '20px';
+        controlText.style.lineHeight = '38px';
+        controlText.style.paddingLeft = '5px';
+        controlText.style.paddingRight = '5px';
+        controlText.innerHTML = 'Export';
+        controlUI.appendChild(controlText);
+
+        controlUI.addEventListener('click', function() {
+          var out = [];
+          drawnOverlays.forEach(function(item) {
+            var type = item.type;
+            out.push({
+                label: item.label,
+                polygon: exporters[type](item.overlay)
+            });
+          });
+          console.log(out);
+          window.prompt('Copy to clipboard', JSON.stringify(out, null, 2));
+        });
+      }
+      function initMap() {
+
+        var map = new google.maps.Map(document.getElementById('map'), {
+          center: {
+            lat: 45.5088400,
+            lng: -73.5878100
+          },
+          zoom: 11
+        });
+        // Create the DIV to hold the control and call the CenterControl()
+        // constructor passing in this DIV.
+        var exportControlDiv = document.createElement('div');
+        var exportControl = new ExportControl(exportControlDiv, map);
+
+        exportControlDiv.index = 1;
+        map.controls[google.maps.ControlPosition.TOP_RIGHT].push(exportControlDiv);
+
+        var drawingManager = new google.maps.drawing.DrawingManager({
+          drawingControl: true,
+          drawingControlOptions: {
+            position: google.maps.ControlPosition.TOP_CENTER,
+            drawingModes: overlayTypes
+          },
+          markerOptions: {
+            icon: 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png'
+          },
+        });
+        drawingManager.setMap(map);
+
+        google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
+          var type = event.type;
+          if (overlayTypes.indexOf(type) > -1) {
+            var label = window.prompt('Enter label.');
+            drawnOverlays.push({
+              label: label,
+              overlay: event.overlay,
+              type: type
+            });
+          }
+        });
+      }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDODFTM5j1AxdAkL50CHFqvyPAioi75nR8&libraries=drawing&callback=initMap" async defer></script>
+  </body>
+</html>
