@@ -1,0 +1,2 @@
+pymongo==3.5.1
+celery==4.1.0
