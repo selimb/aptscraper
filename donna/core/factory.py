@@ -1,7 +1,12 @@
 from apscheduler.schedulers.background import BackgroundScheduler
+from pymongo import MongoClient
 
-from donna.config import CONF
-# from .database import get_jobs
+from ..config import CONF
+
+
+def create_db():
+    client = MongoClient(conf.MONGO_HOST, conf.MONGO_PORT)
+    return client[conf.MONGO_DB]
 
 
 def create_scheduler():

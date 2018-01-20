@@ -1,0 +1,9 @@
+FROM python:3.6.1
+
+RUN mkdir -p /app
+WORKDIR /app
+
+RUN mkdir -p /app/requirements
+COPY requirements/base.txt /app/requirements/
+
+RUN pip install -r requirements/base.txt

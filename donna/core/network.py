@@ -2,19 +2,20 @@ from datetime import datetime, timedelta
 from functools import wraps
 import requests
 
-from . import conf
+# from .. import config import CONF
+# from . import logging_ as logging
 
 
-_proxy = 'socks5://{user}:{pass_}@{host}:{port}'.format(
-    user=conf.PROXY_USER,
-    pass_=conf.PROXY_PASS,
-    host=conf.PROXY_HOST,
-    port=conf.PROXY_PORT,
-)
-_proxies = {'http': _proxy, 'https': _proxy} if conf.USE_PROXY else None
+# _proxy = 'socks5://{user}:{pass_}@{host}:{port}'.format(
+#     user=conf.PROXY_USER,
+#     pass_=conf.PROXY_PASS,
+#     host=conf.PROXY_HOST,
+#     port=conf.PROXY_PORT,
+# )
+# _proxies = {'http': _proxy, 'https': _proxy} if conf.USE_PROXY else None
 
 
-# https://gist.github.com/ChrisTM/5834503
+# Copy-pasta from https://gist.github.com/ChrisTM/5834503
 class throttle:
     """
     Decorator that prevents a function from being called more than once every
@@ -41,9 +42,13 @@ class throttle:
                 return fn(*args, **kwargs)
 
         return wrapper
+
+
 @throttle(seconds=1)
 def get(url):
     # TODO: Setup proxy
+    raise NotImplementedError
+    logger = logging.get_logger(__name__)
     return requests.get(url, proxies=_proxies)
 
 

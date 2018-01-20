@@ -12,23 +12,12 @@ class Spider:
 
     MIN_COUNT = 200
 
-    def __init__(self, base_query_url, hoods, scraper, db, logger):
+    def __init__(self, base_query_url, hoods, scraper, store):
         self.base_query_url = base_query_url
         self.scraper = scraper
         self.db = db
-        self.logger = logger
 
     def collect_listings(self):
-        ret = []
-        url = self.base_query_url
-        while len(ret) < min_count and url is not None:
-            logger.info('GET %s' % url)
-            html = network.get(url).text
-            soup = mk_soup(html)
-            ret.extend(self.scraper.scrape_search_results(soup))
-            url = self.scraper.extract_next_page(soup)
-
-        return ret
 
     def collect_search_results(self, base_url, min_count):
         logger = logging.getLogger()

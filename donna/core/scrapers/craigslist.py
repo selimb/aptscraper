@@ -1,25 +1,18 @@
 def extract_next_page(soup):
-    """
-    Extract "href" to next page given current page.
-    """
+    """Extract "href" to next page given current page."""
     link = soup.head.find('link', rel='next')
     return link['href'] if link is not None else None
 
 
 def scrape_listings(soup):
-    """
-    Reposts are returned with their original `ad_id`.
-    """
+    """Reposts are returned with their original `ad_id`."""
     ul = soup.find('ul', class_='rows')
     lis = ul.find_all('li', class_='result-row', recursive=False)
     ret = []
     for li in lis:
         a = li.find('a', class_='result-title')
-        ad_id = li.get('data-repost-of') or li.get('data-pid')
         ret.append({
-            'ad_id': ad_id,
             'href': a.get('href'),
-            'title': a.get_text(),
         })
 
     return ret

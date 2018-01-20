@@ -1,0 +1,5 @@
+FROM donna-py
+
+COPY requirements/test.txt /app/requirements
+
+RUN pip install -r requirements/test.txt

@@ -1,13 +1,9 @@
 import os
 import pytest
+import unittest.mock
 
-from tarantule.core import utils
+from donna.core import network
 
-from unittest import mock
-
-
-TEST_DIR = os.path.dirname(__file__)
-SAMPLES_DIR = os.path.join(TEST_DIR, 'samples')
 
 
 real = pytest.mark.skipif(
@@ -16,61 +12,37 @@ real = pytest.mark.skipif(
 )
 
 
-class MockedResponse():
-    def __init__(self, fpath):
-        assert os.path.exists(fpath)
-        self.text = open(fpath).read()
-        self.ok = True
-
-
 @pytest.fixture(scope='function')
-def patch_requests(monkeypatch):
-    """
-    Returns a function that patches `requests.get` such that it returns
-    the contents of the filepaths supplied to the function.
-
-    The function returns the mock object.
-    """
-    # TODO: Might not need this
-    def wrapped(fpaths):
-        requests_mock = mock.Mock(
-            side_effect=[MockedResponse(fpath) for fpath in fpaths]
-        )
-        monkeypatch.setattr(requests, 'get', requests_mock)
-        return requests_mock
-    return wrapped
+def patch_network(monkeypatch):
+    mock = unittest.mock.Mock(side_effect=_mocked_get)
+    monkeypatch.setattr(network, 'get', requests_mock)
+    return mock
 
 
 def parse(fpath):
-    return utils.parse(open(fpath).read())
+    from donna.core import parser
+    return parser.parse(open(fpath).read())
 
 
-def sample_fpath_factory(dirname):
-    """
-    Return a function to query path to test sample filename.
-    """
-    def wrapped(fname):
-        fpath = os.path.join(SAMPLES_DIR, dirname, fname)
-        return fpath
-    return wrapped
+def _mocked_get(url):
+    print('mocked get ' + url)
+    fpath = _get_fpath_for_url(url)
+    return _MockedResponse(fpath)
 
 
-def assert_search_results(search_results, expected):
-    # TODO: Remove
-    # Assert there aren't any duplicates
-    unique_ids = {l['data_id'] for l in search_results}
-    assert len(search_results) == len(unique_ids)
-    for result in search_results:
-        assert 'href' in result
-        assert 'title' in result
-    for idx, expected_result in expected.items():
-        assert search_results[idx] == expected_result
+class _MockedResponse():
+    def __init__(self, fpath):
+        assert os.path.exists(fpath)
+        with open(fpath, 'rb') as f:
+            self.content = f.read()
+        self.text = self.content.decode()
+        self.ok = True
 
 
-def assert_ad(ad, expected):
-    if 'num_images' in expected:
-        assert len(set(ad['images'])) == expected.pop('num_images')
-    if 'body_pattern' in expected:
-        assert expected.pop('body_pattern') in ad['body']
-    for key in expected:
-        assert ad[key] == expected[key]
+def _get_fpath_for_url(url):
+    for search_pages in samples.SEARCH_PAGES.values():
+        for search_page in search_pages:
+            if url == search_page['url']:
+                return search_page['fpath']
+
+    raise AssertionError('Invalid url %s' % url)

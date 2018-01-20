@@ -14,9 +14,9 @@ def extract_next_page(soup):
     return link['href'] if link is not None else None
 
 
-def scrape_listings(soup, top=False):
+def scrape_listings(soup):
     """
-    With `top = False`, listings in the Top Ad section are ignored. See
+    Listings in the Top Ad section are ignored. See
     https://help.kijiji.ca/performance/TopAd for more information
     on Top Ads.
     """
@@ -24,13 +24,10 @@ def scrape_listings(soup, top=False):
     items = soup.find_all('div', class_='search-item')
     for div in items:
         listing_is_top = 'top-feature' in div['class']
-        if top is False and listing_is_top:
+        if listing_is_top:
             continue
-        title_div = div.find('div', class_='title')
         ret.append({
-            'ad_id': div.get('data-ad-id'),
             'href': div.get('data-vip-url'),
-            'title': title_div.get_text().strip(),
         })
 
     return ret

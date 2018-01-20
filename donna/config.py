@@ -7,30 +7,34 @@ import os
 
 
 APP_NAME = 'DONNA'
-_celery_db = 'celery_tasks'
-defaults = {
-    'SECRET_KEY': 'secret-key',
-    'MODE': 'dev',
-}
 
 
-def getenv(var):
-    default = defaults.get(var, None)
-    return os.environ.get('_'.join([APP_NAME, var]), default)
+def get_env(key):
+    default = defaults.get(key, None)
+    return os.environ.get(key, default)
+
+
+def assert_no_defaults(config):
+    def is_caps(name):
+        return name.upper() == name
+    pairs = [member for member in inspect.getmembers(config) if is_caps(member[0])]
+    dct = dict(pairs)
+    for key, value in dct.items():
+        assert value is not None, 'Unset value for {}'.format(key)
 
 
 class Config:
     # Flask
     DEBUG = False
     TESTING = False
-    SECRET_KEY = getenv('SECRET_KEY')
+    SECRET_KEY = get_env('SECRET_KEY')
 
     # Network
     USE_PROXY = False
     PROXY_HOST = 'proxy-nl.privateinternetaccess.com'
     PROXY_PORT = '1080'
-    PROXY_USER = getenv('PROXY_USER')
-    PROXY_PASS = getenv('PROXY_PASS')
+    PROXY_USER = get_env('PROXY_USER')
+    PROXY_PASS = get_env('PROXY_PASS')
 
     # Mail
 
@@ -39,15 +43,15 @@ class Config:
     RPYC_PORT = 12345
 
     # Mongo
-    MONGO_HOST = '127.0.0.1'
-    MONGO_PORT = 27017
-
-    # Scheduler
-    SCHEDULER_MONGO_COLLECTION = 'jobs'
+    MONGO_HOST = get_env('MONGO_HOST')
+    MONGO_PORT = get_env('MONGO_PORT')
+    MONGO_DB_NAME = APP_NAME
+    MONGO_SCHEDULER_COLLECTION = 'scheduler'
+    MONGO_JOBS_COLLECTION = 'jobs'
 
 
 class ProductionConfig(Config):
-    MONGO_DB = 'prod'
+    USE_PROXY = True
 
 
 class DevelopmentConfig(Config):
@@ -60,16 +64,17 @@ class TestingConfig(Config):
 
 def get_config():
     # TODO: Document
-    mode = getenv('MODE').lower()
+    mode = get_env(APP_NAME + '_MODE').lower() or 'dev'
     if mode == 'dev':
         return DevelopmentConfig
     elif mode == 'test':
         return TestingConfig
     elif mode == 'prod':
         config = ProductionConfig
-        # TODO
+        assert_no_defaults(config)
     else:
         raise AssertionError("Mode {} is invalid.".format(mode))
 
 
 CONF = get_config()
+

@@ -1,8 +1,7 @@
-engine:
-	env/bin/python -m donna.engine
+build-base:
+	docker build -t donna-py -f Dockerfile.python .
 
-mongo:
-	mongod --dbpath temp/data
+test:
+	docker-compose run test flake8
+	docker-compose run test pytest
 
-client:
-	env/bin/python -i client.py

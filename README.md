@@ -1,8 +1,11 @@
+
+Design philosophy
+-----------------
+
+Engine depends on core, web depends on engine
+
+
 Running tests
+-------------
 
-1. Install tox
-1. `$ tox`
-
-Installed stuff
-
-mongodb
+docker-compose run test pytest [ARGS]

@@ -8,4 +8,3 @@ PARSER_LIB = 'html.parser'
 def parse(html):
     return bs4.BeautifulSoup(html, PARSER_LIB)
 
-
