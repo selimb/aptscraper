@@ -7,3 +7,5 @@ RUN mkdir -p /app/requirements
 COPY requirements/base.txt /app/requirements/
 
 RUN pip install -r requirements/base.txt
+
+COPY setup.cfg /app/setup.cfg

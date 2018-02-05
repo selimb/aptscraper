@@ -10,8 +10,7 @@ APP_NAME = 'DONNA'
 
 
 def get_env(key):
-    default = defaults.get(key, None)
-    return os.environ.get(key, default)
+    return os.environ.get(key, None)
 
 
 def assert_no_defaults(config):
@@ -64,7 +63,8 @@ class TestingConfig(Config):
 
 def get_config():
     # TODO: Document
-    mode = get_env(APP_NAME + '_MODE').lower() or 'dev'
+    mode = get_env(APP_NAME + '_MODE')
+    mode = 'dev' if mode is None else mode.lower()
     if mode == 'dev':
         return DevelopmentConfig
     elif mode == 'test':

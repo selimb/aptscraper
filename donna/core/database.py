@@ -1,46 +1,85 @@
-from collections import namedtuple
-
-from . import config
-from .factory import get_db()
+from bson.objectid import ObjectId
 
 
-class User:
-    def __init__(self, _id, email):
-        self._id = _id
-        self.email = email
+_DB = None
+
+
+def get_db():
+    assert _DB is not None
+    return _DB
+
+
+def init_db(client):
+    global _DB
+    _DB = client.donna
 
 
 class Job:
-    def __init__(self, _id, queries, hoods, to_email):
-        self._id = _id
+    def __init__(self, queries, hoods, to_email):
         self.queries = queries
         self.hoods = hoods
         self.to_email = to_email
 
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
 
-class ListingStore:
-    def __init__(self, collection):
-        self._collection = collection
 
-    def mark_checked(self, listings):
-        pass
+class ScrapeHistory:
+    def __init__(self, job_id):
+        self.job_id = ObjectId(job_id)
 
-    def was_checked(self, listings):
-        pass
+    def mark_visited(self, urls):
+        documents = [
+            {"job_id": self.job_id, "url": url}
+            for url in urls
+        ]
+        _history().insert_many(documents)
+
+    def was_visited(self, urls):
+        # TODO: Only need to see if it's there.
+        # Projection to None?
+        # Batch retrieve?
+        docs = _history().find(
+            {"job_id": self.job_id, "url": {"$in": urls}},
+            projection={"url": True, "_id": False}
+        )
+        visited = set(doc["url"] for doc in docs)
+        return [url in visited for url in urls]
 
 
 def add_job(job):
-# TODO test
-    document = job.__dict__.pop('_id')
-    _get_job_collection().insert_one(job)
+    document = {
+        'queries': job.queries,
+        'hoods': job.hoods,
+        'to_email': job.to_email
+    }
+    inserted = _jobs().insert_one(document)
+    return inserted.inserted_id
 
 
-def get_jobs(user_id=None):
-# TODO test
-    filtr = {'user_id': user_id} if user_id else None
-    for job_dict in _get_job_collection().find(filtr):
-        yield Job(**job_dict)
+def get_jobs(job_ids):
+    # TODO: Could also use .find({"_id": {"$in": ids}})
+    # Don't know if returning in order is important
+    job_ids = map(ObjectId, job_ids)
+    return [
+        _job_from_document(_jobs().find_one({"_id": job_id}))
+        for job_id in job_ids
+    ]
 
 
-def _get_job_collection():
-    return db[CONF.MONGO_JOBS_COLLECTION]
+def edit_job(job_id, job):
+    raise NotImplementedError
+
+
+def _job_from_document(document):
+    document.pop("_id")
+    return Job(**document)
+
+
+def _jobs():
+    return get_db()["jobs"]
+
+
+def _history():
+    return get_db()["history"]
+
