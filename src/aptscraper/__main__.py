@@ -12,7 +12,7 @@ from .mail import send_apt
 from .geo import match_hood
 
 
-MIN_LISTINGS = 400
+MIN_LISTINGS = 200
 GMAP_TEMPLATE = 'google.com/maps/?q={lat:f},{lng:f}'
 
 

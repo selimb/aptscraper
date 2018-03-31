@@ -1,11 +1,14 @@
 import logging
 import requests
+import json
+import html as html_utils
 import re
 
 from . import utils
 
 
 HOME = 'http://www.kijiji.ca'
+_IMG_REGEX = re.compile('\$_\d+\.JPG')
 
 
 def collect_listings(min_count, conf):
@@ -80,54 +83,43 @@ def extract_items(html):
 
 def parse_posting(html):
     soup = utils.mk_soup(html)
-    apt = {}
-    apt['dims'] = None
 
-    title_div = soup.find('div', {'itemtype': 'http://schema.org/Product'})
-    apt['title'] = title_div.get_text().strip()
+    ad = {
+        'images': [],
+        'body': '',
+        'title': '',
+        'price': None,
+        'geo': None,
+        'dims': None,
+    }
+    script = soup.find(id='FesLoader').find('script').get_text()
+    var, script = script.split('=', 1)
+    assert var == 'window.__data'
+    assert script.endswith(';')
+    json_data = json.loads(script[:-1])
+    json_data = json_data['config']
+    ad['title'] = json_data['adInfo']['title']
+    vip = json_data['VIP']
+    ad['images'] = [
+        _IMG_REGEX.sub('$_57.JPG', img['href'])
+        for img in vip['media']
+    ]
+    body = html_utils.unescape(vip['description'])
+    ad['body'] = _minimize_newlines(body)
+    price_string = vip['price']['amount']
+    if price_string is not None:
+        ad['price'] = float(price_string)/100
 
-    attrs = soup.find('table', class_='ad-attributes')
-    price = attrs.find('span', {'itemprop': 'price'}).get_text()
-    price = ''.join(re.findall(r'(\d|\.)', price.replace(',', '.')))
-    apt['price'] = float(price)
+    ad_location = vip['adLocation']
+    # Kijij gives the coordinates of the area when there is no adress.
+    address = ad_location.get('mapAddress')
+    if address:
+        lat, lng = ad_location.get('latitude'), ad_location.get('longitude')
+        ad['geo'] = (lat, lng)
 
-    apt['body'] = '\n'.join(soup.find(id='UserContent').stripped_strings)
-    shown_image = soup.find(id='ShownImage')
-    images = []
-    if shown_image:
-        lis = shown_image.find_all('li', recursive=False)
-        for li in lis:
-            img = li.find('img', recursive=False)
-            if not img:  # is a video
-                continue
-            link = li.find('img')['src']
-            parts = link.split('/')
-            root = parts[:-1]
-            fname = parts[-1]
-            if not fname.startswith('$'):
-                images.append(link)
-                continue
-            base, ext = fname.split('.')
-            new_fname = '.'.join(['$_27', ext])
-            images.append('/'.join(root + [new_fname, ]))
+    return ad
 
-    apt['images'] = images
-    head = soup.head
-    lat = lng = None
-    apt['geo'] = None
-    for meta in head.find_all('meta'):
-        try:
-            prop = meta['property']
-        except KeyError:
-            continue
-        if prop == 'og:latitude':
-            lat = float(meta['content'])
-        elif prop == 'og:longitude':
-            lng = float(meta['content'])
 
-        # Does not enter for lat = lng = 0.0. OK
-        if lat and lng:
-            apt['geo'] = (lat, lng)
-            break
-
-    return apt
+def _minimize_newlines(text):
+    gen = (s.strip() for s in text.split('\n') if s.strip() != '')
+    return '\n'.join(gen)

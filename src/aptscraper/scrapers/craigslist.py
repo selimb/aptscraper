@@ -1,5 +1,6 @@
 import logging
 import requests
+from urllib.parse import urljoin
 
 from . import utils
 
@@ -31,7 +32,7 @@ def _collect_listings(min_count, *, min_price, max_price, laundry):
         items = extract_items(page)
         for item in items:
             data_id = item['repost'] or item['data_id']
-            url = HOME + item['href']
+            url = urljoin(HOME, item['href'])
             listings.append({
                 'data_id': data_id,
                 'url': url,
