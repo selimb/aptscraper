@@ -4,6 +4,7 @@ import logging.handlers
 import os
 import requests
 import sys
+import time
 
 from . import scrapers
 from .store import init_db
@@ -98,13 +99,20 @@ def send(apartments, conf, db):
     logger = logging.getLogger()
     for apt in apartments:
         logger.info('SENDING ' + fmt(apt))
-        send_apt(
-            apt,
-            fromaddr=conf['fromaddr'],
-            passwd=conf['passwd'],
-            toaddr=conf['toaddr'],
-            dry=conf.get('dry_run', False),
-        )
+        for _ in range(5):
+            try:
+                send_apt(
+                    apt,
+                    fromaddr=conf['fromaddr'],
+                    passwd=conf['passwd'],
+                    toaddr=conf['toaddr'],
+                    dry=conf.get('dry_run', False),
+                )
+            except Exception:
+                logger.exception("Failed to send.")
+                time.sleep(1)
+                continue
+            break
         db.add(apt['data_id'])
 
 
