@@ -12,25 +12,22 @@ _IMG_REGEX = re.compile('\$_\d+\.JPG')
 
 
 def collect_listings(min_count, conf):
-    return _collect_listings(
-        min_count,
-        min_price=conf.get('min_price'),
-        max_price=conf.get('max_price'),
-    )
+    ret = []
+    for base_url in conf['kijiji']:
+        ret.extend(
+            _collect_listings(min_count, base_url)
+        )
+    return ret
 
 
-def _collect_listings(min_count, *, min_price, max_price):
+def _collect_listings(min_count, base_url):
     logger = logging.getLogger()
     listings = []
     page_count = 0
     num = 0
     while num <= min_count:
         page_count += 1
-        url = construct_search_url(
-            page=page_count,
-            min_price=min_price,
-            max_price=max_price
-        )
+        url = base_url.format(page=page_count)
         logger.info('SCRAPING: %s' % url)
         page = requests.get(url).text
         items = extract_items(page)

@@ -34,8 +34,14 @@ properties = {
     'dry_run': {
         'type': 'boolean',
     },
+    'kijiji': {
+        'type': 'array',
+        'items': {
+            'type': 'string'
+        }
+    }
 }
-required = number_fields + string_fields + ['hoods', 'laundry']
+required = number_fields + string_fields + ['hoods']
 for field in number_fields:
     properties[field] = {'type': ['number', 'null']}
 for field in string_fields:
