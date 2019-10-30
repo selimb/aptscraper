@@ -1,5 +1,5 @@
 APScheduler==3.5.1
 beautifulsoup4==4.6.0
 pymongo==3.5.1
-requests==2.18.4
+requests==2.20.0
 rpyc==3.4.4
